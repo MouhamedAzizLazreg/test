@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Call</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .call-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .ai-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-avatar.speaking {
+            animation: avatarPulse 2s infinite;
+            box-shadow: 0 0 50px rgba(102, 126, 234, 0.8);
+        }
+
+        .ai-avatar.listening {
+            animation: avatarListen 1.5s infinite alternate;
+        }
+
+        @keyframes avatarPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes avatarListen {
+            0% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            100% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.9); }
+        }
+
+        .ai-name {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .call-status {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .transcript {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+            min-height: 80px;
+            color: white;
+            font-size: 1rem;
+            line-height: 1.5;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .call-controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .call-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .call-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-call {
+            background: linear-gradient(145deg, #00d2ff, #3a7bd5);
+        }
+
+        .end-call {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+        }
+
+        .mute-btn {
+            background: linear-gradient(145deg, #ffa502, #ff6348);
+        }
+
+        .mute-btn.muted {
+            background: linear-gradient(145deg, #747d8c, #57606f);
+        }
+
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .settings-panel h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .setting-group input, .setting-group select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .setting-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .volume-visualizer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            height: 40px;
+            margin: 20px 0;
+        }
+
+        .volume-bar {
+            width: 4px;
+            background: linear-gradient(to top, #00d2ff, #3a7bd5);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+            min-height: 5px;
+        }
+
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.connected {
+            background: #2ed573;
+            box-shadow: 0 0 10px rgba(46, 213, 115, 0.5);
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .call-container {
+                padding: 30px 25px;
+                margin: 10px;
+            }
+            
+            .ai-avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+            
+            .ai-name {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="call-container">
+        <div class="connection-status" id="connectionStatus"></div>
+        
+        <div class="settings-panel" id="settingsPanel">
+            <h3>⚙️ Call Settings</h3>
+            <div class="setting-group">
+                <label>n8n Webhook URL:</label>
+                <input type="url" id="webhookUrl" placeholder="https://ai.ev24.support/webhook/your-id">
+            </div>
+            <div class="setting-group">
+                <label>Voice Detection Sensitivity:</label>
+                <select id="sensitivity">
+                    <option value="high">High (Responds to whispers)</option>
+                    <option value="medium" selected>Medium (Normal conversation)</option>
+                    <option value="low">Low (Loud speech only)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="ai-avatar" id="aiAvatar">🤖</div>
+        <div class="ai-name">AI Assistant</div>
+        
+        <div class="call-status" id="callStatus">
+            <div>Ready to start voice call</div>
+            <div style="font-size: 0.9rem; margin-top: 5px; opacity: 0.7;">Configure settings above, then click call</div>
+        </div>
+
+        <div class="transcript" id="transcript">
+            Conversation will appear here...
+        </div>
+
+        <div class="volume-visualizer" id="volumeVisualizer">
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+            <div class="volume-bar"></div>
+        </div>
+
+        <div class="call-controls">
+            <button class="call-btn start-call" id="startCall" title="Start Call">📞</button>
+            <button class="call-btn mute-btn" id="muteBtn" title="Mute/Unmute">🎤</button>
+            <button class="call-btn end-call" id="endCall" title="End Call">📵</button>
+        </div>
+
+        <div class="error-message hidden" id="errorMessage"></div>
+    </div>
+
+    <script>
+        class AIVoiceCall {
+            constructor() {
+                this.isCallActive = false;
+                this.isMuted = false;
+                this.isListening = false;
+                this.isSpeaking = false;
+                this.mediaRecorder = null;
+                this.audioStream = null;
+                this.websocket = null;
+                this.audioContext = null;
+                this.analyzer = null;
+                this.silenceTimer = null;
+                this.audioChunks = [];
+                this.lastSpeechTime = 0;
+                
+                this.initializeElements();
+                this.initializeEventListeners();
+                this.setupVoiceDetection();
+            }
+
+            initializeElements() {
+                this.startCallBtn = document.getElementById('startCall');
+                this.endCallBtn = document.getElementById('endCall');
+                this.muteBtn = document.getElementById('muteBtn');
+                this.callStatus = document.getElementById('callStatus');
+                this.transcript = document.getElementById('transcript');
+                this.aiAvatar = document.getElementById('aiAvatar');
+                this.connectionStatus = document.getElementById('connectionStatus');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.settingsPanel = document.getElementById('settingsPanel');
+                this.webhookUrl = document.getElementById('webhookUrl');
+                this.sensitivity = document.getElementById('sensitivity');
+                this.volumeVisualizer = document.getElementById('volumeVisualizer');
+            }
+
+            initializeEventListeners() {
+                this.startCallBtn.addEventListener('click', () => this.startCall());
+                this.endCallBtn.addEventListener('click', () => this.endCall());
+                this.muteBtn.addEventListener('click', () => this.toggleMute());
+            }
+
+            async startCall() {
+                if (!this.webhookUrl.value.trim()) {
+                    this.showError('Please enter your n8n webhook URL first');
+                    return;
+                }
+
+                try {
+                    await this.initializeAudio();
+                    this.isCallActive = true;
+                    this.updateUI();
+                    this.startListening();
+                    this.updateStatus('Call connected - Start speaking!');
+                    this.connectionStatus.classList.add('connected');
+                    this.settingsPanel.classList.add('hidden');
+                } catch (error) {
+                    this.showError(`Failed to start call: ${error.message}`);
+                }
+            }
+
+            async endCall() {
+                this.isCallActive = false;
+                this.stopListening();
+                this.cleanup();
+                this.updateUI();
+                this.updateStatus('Call ended');
+                this.connectionStatus.classList.remove('connected');
+                this.settingsPanel.classList.remove('hidden');
+                this.transcript.textContent = 'Conversation will appear here...';
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                if (this.audioStream) {
+                    this.audioStream.getAudioTracks().forEach(track => {
+                        track.enabled = !this.isMuted;
+                    });
+                }
+                this.updateUI();
+                this.updateStatus(this.isMuted ? 'Microphone muted' : 'Microphone active');
+            }
+
+            async initializeAudio() {
+                this.audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100,
+                        channelCount: 1
+                    }
+                });
+
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.analyzer = this.audioContext.createAnalyser();
+                const source = this.audioContext.createMediaStreamSource(this.audioStream);
+                source.connect(this.analyzer);
+                
+                this.analyzer.fftSize = 256;
+                this.startVolumeVisualization();
+            }
+
+            setupVoiceDetection() {
+                this.sensitivityLevels = {
+                    'high': -45,
+                    'medium': -35, 
+                    'low': -25
+                };
+            }
+
+            startListening() {
+                if (!this.isCallActive || this.isMuted) return;
+
+                this.detectVoiceActivity();
+            }
+
+            detectVoiceActivity() {
+                if (!this.analyzer || !this.isCallActive) return;
+
+                const bufferLength = this.analyzer.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                this.analyzer.getByteFrequencyData(dataArray);
+
+                // Calculate average volume
+                const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+                const threshold = this.sensitivityLevels[this.sensitivity.value] + 100; // Convert to 0-255 range
+
+                const currentTime = Date.now();
+                
+                if (average > threshold) {
+                    if (!this.isListening) {
+                        this.startRecording();
+                    }
+                    this.lastSpeechTime = currentTime;
+                } else if (this.isListening && currentTime - this.lastSpeechTime > 1500) {
+                    // Stop recording after 1.5 seconds of silence
+                    this.stopRecording();
+                }
+
+                // Continue detection
+                if (this.isCallActive) {
+                    setTimeout(() => this.detectVoiceActivity(), 100);
+                }
+            }
+
+            startRecording() {
+                if (this.isListening || this.isSpeaking || this.isMuted) return;
+
+                this.isListening = true;
+                this.audioChunks = [];
+                this.updateUI();
+                this.updateStatus('Listening...');
+
+                this.mediaRecorder = new MediaRecorder(this.audioStream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.audioChunks.push(event.data);
+                    }
+                };
+
+                this.mediaRecorder.onstop = () => {
+                    this.processAudio();
+                };
+
+                this.mediaRecorder.start();
+            }
+
+            stopRecording() {
+                if (!this.isListening || !this.mediaRecorder) return;
+
+                this.isListening = false;
+                this.mediaRecorder.stop();
+                this.updateUI();
+                this.updateStatus('Processing...');
+            }
+
+            async processAudio() {
+                if (this.audioChunks.length === 0) return;
+
+                try {
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                    
+                    // Skip very short recordings
+                    if (audioBlob.size < 1000) {
+                        this.updateStatus('Call connected - Start speaking!');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'voice.webm');
+                    formData.append('timestamp', new Date().toISOString());
+                    formData.append('callId', this.generateCallId());
+
+                    const response = await this.sendToWebhook(formData);
+                    await this.handleResponse(response);
+
+                } catch (error) {
+                    this.showError(`Processing failed: ${error.message}`);
+                    this.updateStatus('Call connected - Start speaking!');
+                }
+            }
+
+            async sendToWebhook(formData) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+                try {
+                    const response = await fetch(this.webhookUrl.value, {
+                        method: 'POST',
+                        body: formData,
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    if (error.name === 'AbortError') {
+                        throw new Error('Request timed out - check your webhook URL and network connection');
+                    }
+                    throw error;
+                }
+            }
+
+            async handleResponse(data) {
+                if (data.transcription) {
+                    this.transcript.innerHTML = `
+                        <div style="color: #00d2ff; margin-bottom: 10px;">You: ${data.transcription}</div>
+                        ${data.response ? `<div style="color: #2ed573;">AI: ${data.response}</div>` : ''}
+                    `;
+                }
+
+                if (data.audioUrl) {
+                    await this.playAIResponse(data.audioUrl);
+                } else if (data.response) {
+                    // Fallback to text-to-speech if no audio URL
+                    await this.speakText(data.response);
+                }
+
+                this.updateStatus('Call connected - Start speaking!');
+            }
+
+            async playAIResponse(audioUrl) {
+                try {
+                    this.isSpeaking = true;
+                    this.updateUI();
+                    this.updateStatus('AI is speaking...');
+
+                    const audio = new Audio(audioUrl);
+                    audio.preload = 'auto';
+                    
+                    await new Promise((resolve, reject) => {
+                        audio.oncanplaythrough = () => {
+                            audio.play().then(resolve).catch(reject);
+                        };
+                        audio.onerror = () => reject(new Error('Failed to load audio'));
+                        audio.onended = resolve;
+                    });
+
+                } catch (error) {
+                    console.error('Audio playback error:', error);
+                    // Continue the call even if audio fails
+                } finally {
+                    this.isSpeaking = false;
+                    this.updateUI();
+                }
+            }
+
+            async speakText(text) {
+                if ('speechSynthesis' in window) {
+                    return new Promise((resolve) => {
+                        this.isSpeaking = true;
+                        this.updateUI();
+                        
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.rate = 0.9;
+                        utterance.pitch = 1;
+                        utterance.volume = 0.8;
+                        
+                        utterance.onend = () => {
+                            this.isSpeaking = false;
+                            this.updateUI();
+                            resolve();
+                        };
+                        
+                        speechSynthesis.speak(utterance);
+                    });
+                }
+            }
+
+            startVolumeVisualization() {
+                const bars = this.volumeVisualizer.querySelectorAll('.volume-bar');
+                
+                const animate = () => {
+                    if (!this.analyzer || !this.isCallActive) return;
+
+                    const bufferLength = this.analyzer.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+                    this.analyzer.getByteFrequencyData(dataArray);
+
+                    bars.forEach((bar, index) => {
+                        const value = dataArray[index * 4] || 0;
+                        const height = Math.max(5, (value / 255) * 35);
+                        bar.style.height = `${height}px`;
+                    });
+
+                    if (this.isCallActive) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+
+                animate();
+            }
+
+            updateUI() {
+                // Avatar states
+                this.aiAvatar.className = 'ai-avatar';
+                if (this.isSpeaking) {
+                    this.aiAvatar.classList.add('speaking');
+                } else if (this.isListening) {
+                    this.aiAvatar.classList.add('listening');
+                }
+
+                // Button states
+                this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
+                this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
+                
+                this.muteBtn.className = `call-btn mute-btn ${this.isMuted ? 'muted' : ''}`;
+                this.muteBtn.textContent = this.isMuted ? '🔇' : '🎤';
+            }
+
+            updateStatus(message) {
+                this.callStatus.innerHTML = `<div>${message}</div>`;
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    this.errorMessage.classList.add('hidden');
+                }, 5000);
+            }
+
+            generateCallId() {
+                return 'call_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            cleanup() {
+                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.stop();
+                }
+                
+                if (this.audioStream) {
+                    this.audioStream.getTracks().forEach(track => track.stop());
+                }
+                
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+                
+                this.audioStream = null;
+                this.audioContext = null;
+                this.analyzer = null;
+                this.mediaRecorder = null;
+            }
+        }
+
+        // Initialize the voice call app
+        document.addEventListener('DOMContentLoaded', () => {
+            new AIVoiceCall();
+        });
+    </script>
+</body>
+</html>
