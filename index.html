@@ -12,8 +12,8 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #e9edf5 0%, #cfd8e3 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -23,67 +23,78 @@
         }
 
         .call-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 30px;
-            padding: 50px;
-            max-width: 500px;
+            background: #fff;
+            border-radius: 24px;
+            padding: 44px 38px 32px 38px;
+            max-width: 430px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(44,62,80,0.10);
             position: relative;
         }
 
         .ai-avatar {
-            width: 120px;
-            height: 120px;
+            width: 84px;
+            height: 84px;
             border-radius: 50%;
-            background: linear-gradient(145deg, #667eea, #764ba2);
-            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #e0e7ef 0%, #cfd8e3 100%);
+            margin: 0 auto 22px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            color: white;
-            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
-            transition: all 0.3s ease;
+            font-size: 2.2rem;
+            color: #4a5a6a;
+            font-weight: 600;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            user-select: none;
             position: relative;
-            overflow: hidden;
+            transition: box-shadow 0.2s;
         }
-
         .ai-avatar.speaking {
-            animation: avatarPulse 2s infinite;
-            box-shadow: 0 0 50px rgba(102, 126, 234, 0.8);
+            box-shadow: 0 0 0 4px #4a90e2, 0 2px 8px rgba(0,0,0,0.04);
         }
-
         .ai-avatar.listening {
-            animation: avatarListen 1.5s infinite alternate;
+            box-shadow: 0 0 0 4px #2ed573, 0 2px 8px rgba(0,0,0,0.04);
         }
 
-        @keyframes avatarPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .speaking-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+            height: 18px;
         }
-
-        @keyframes avatarListen {
-            0% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
-            100% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.9); }
+        .dot {
+            width: 7px;
+            height: 7px;
+            margin: 0 2px;
+            border-radius: 50%;
+            background: #4a90e2;
+            opacity: 0.5;
+            animation: bounce 1s infinite alternate;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0% { opacity: 0.5; transform: translateY(0);}
+            50% { opacity: 1; transform: translateY(-6px);}
+            100% { opacity: 0.5; transform: translateY(0);}
         }
 
         .ai-name {
-            color: white;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: #253858;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
         }
 
         .call-status {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1.1rem;
-            margin-bottom: 40px;
-            min-height: 60px;
+            color: #7a869a;
+            font-size: 1.05rem;
+            margin-bottom: 32px;
+            min-height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -91,167 +102,166 @@
         }
 
         .transcript {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 30px 0;
-            min-height: 80px;
-            color: white;
-            font-size: 1rem;
+            background: #f3f6fa;
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin: 22px 0 18px 0;
+            min-height: 48px;
+            color: #2d3748;
+            font-size: 1.05rem;
             line-height: 1.5;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid #e0e7ef;
             display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
+            text-align: left;
         }
 
         .call-controls {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            margin: 40px 0;
+            gap: 24px;
+            margin: 28px 0 0 0;
         }
 
         .call-btn {
-            width: 70px;
-            height: 70px;
+            width: 54px;
+            height: 54px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            color: white;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            font-size: 1.5rem;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.08);
         }
 
-        .call-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        .call-btn:active {
+            transform: scale(0.97);
         }
 
         .start-call {
-            background: linear-gradient(145deg, #00d2ff, #3a7bd5);
+            background: linear-gradient(135deg, #4a90e2, #357ab8);
         }
 
         .end-call {
-            background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
         }
 
         .mute-btn {
-            background: linear-gradient(145deg, #ffa502, #ff6348);
+            background: linear-gradient(135deg, #b0c4de, #7a869a);
+            color: #fff;
         }
 
         .mute-btn.muted {
-            background: linear-gradient(145deg, #747d8c, #57606f);
+            background: linear-gradient(135deg, #747d8c, #57606f);
         }
 
         .settings-panel {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #f6f7fb;
+            border-radius: 12px;
+            padding: 18px 18px 8px 18px;
+            margin-bottom: 24px;
+            border: 1px solid #e0e7ef;
             text-align: left;
         }
 
         .settings-panel h3 {
-            color: white;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
+            color: #253858;
+            margin-bottom: 12px;
+            font-size: 1.08rem;
             text-align: center;
+            font-weight: 600;
         }
 
         .setting-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .setting-group label {
             display: block;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 5px;
-            font-size: 0.9rem;
+            color: #4a5a6a;
+            margin-bottom: 4px;
+            font-size: 0.93rem;
         }
 
         .setting-group input, .setting-group select {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            font-size: 0.9rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 7px;
+            background: #e9edf5;
+            color: #253858;
+            font-size: 0.97rem;
+            border: 1px solid #cfd8e3;
         }
 
         .setting-group input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+            color: #b0b8c1;
         }
 
         .volume-visualizer {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 3px;
-            height: 40px;
-            margin: 20px 0;
+            gap: 2px;
+            height: 32px;
+            margin: 12px 0 0 0;
         }
 
         .volume-bar {
-            width: 4px;
-            background: linear-gradient(to top, #00d2ff, #3a7bd5);
+            width: 3px;
+            background: linear-gradient(to top, #4a90e2, #357ab8);
             border-radius: 2px;
-            transition: height 0.1s ease;
-            min-height: 5px;
+            transition: height 0.1s;
+            min-height: 4px;
         }
 
         .connection-status {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 12px;
-            height: 12px;
+            top: 18px;
+            right: 18px;
+            width: 11px;
+            height: 11px;
             border-radius: 50%;
             background: #ff6b6b;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
 
         .connection-status.connected {
             background: #2ed573;
-            box-shadow: 0 0 10px rgba(46, 213, 115, 0.5);
+            box-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
         }
 
         .error-message {
-            background: rgba(255, 107, 107, 0.2);
+            background: #fff0f0;
             color: #ff6b6b;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border: 1px solid rgba(255, 107, 107, 0.3);
-            font-size: 0.9rem;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 18px 0 0 0;
+            border: 1px solid #ffe0e0;
+            font-size: 0.97rem;
         }
 
         .hidden {
             display: none !important;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 600px) {
             .call-container {
-                padding: 30px 25px;
-                margin: 10px;
+                padding: 18px 8px 12px 8px;
+                margin: 6px;
             }
-            
             .ai-avatar {
-                width: 100px;
-                height: 100px;
-                font-size: 2.5rem;
+                width: 62px;
+                height: 62px;
+                font-size: 1.3rem;
             }
-            
             .ai-name {
-                font-size: 1.5rem;
+                font-size: 1.1rem;
             }
         }
     </style>
@@ -261,7 +271,7 @@
         <div class="connection-status" id="connectionStatus"></div>
         
         <div class="settings-panel" id="settingsPanel">
-            <h3>⚙️ Call Settings</h3>
+            <h3>Call Settings</h3>
             <div class="setting-group">
                 <label>n8n Webhook URL:</label>
                 <input type="url" id="webhookUrl" placeholder="https://ai.ev24.support/webhook/your-id">
@@ -285,12 +295,17 @@
             </div>
         </div>
 
-        <div class="ai-avatar" id="aiAvatar">🤖</div>
-        <div class="ai-name">AI Assistant</div>
+        <div class="ai-avatar" id="aiAvatar">VA</div>
+        <div class="speaking-indicator" id="speakingIndicator" style="display:none;">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div class="ai-name">Voice Agent</div>
         
         <div class="call-status" id="callStatus">
             <div>Ready to start voice call</div>
-            <div style="font-size: 0.9rem; margin-top: 5px; opacity: 0.7;">Configure settings above, then click call</div>
+            <div style="font-size: 0.93rem; margin-top: 4px; opacity: 0.7;">Configure settings above, then click call</div>
         </div>
 
         <div class="transcript" id="transcript">
@@ -309,9 +324,15 @@
         </div>
 
         <div class="call-controls">
-            <button class="call-btn start-call" id="startCall" title="Start Call">📞</button>
-            <button class="call-btn mute-btn" id="muteBtn" title="Mute/Unmute">🎤</button>
-            <button class="call-btn end-call" id="endCall" title="End Call">📵</button>
+            <button class="call-btn start-call" id="startCall" title="Start Call">
+                <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="13" r="11"/><path d="M9 13l3 3 5-5"/></svg>
+            </button>
+            <button class="call-btn mute-btn" id="muteBtn" title="Mute/Unmute">
+                <svg id="micIcon" width="22" height="22" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="8" height="12" rx="4"/><path d="M11 16v2m-4 0h8"/></svg>
+            </button>
+            <button class="call-btn end-call" id="endCall" title="End Call">
+                <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16c4-4 14-4 18 0"/><path d="M2 16v4h4"/><path d="M22 16v4h-4"/></svg>
+            </button>
         </div>
 
         <div class="error-message hidden" id="errorMessage"></div>
@@ -352,6 +373,8 @@
                 this.sensitivity = document.getElementById('sensitivity');
                 this.corsProxy = document.getElementById('corsProxy');
                 this.volumeVisualizer = document.getElementById('volumeVisualizer');
+                this.speakingIndicator = document.getElementById('speakingIndicator');
+                this.micIcon = document.getElementById('micIcon');
             }
 
             initializeEventListeners() {
@@ -477,12 +500,12 @@
                 this.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         this.audioChunks.push(event.data);
-                        console.log('Audio chunk received, size:', event.data.size);
+                        //console.log('Audio chunk received, size:', event.data.size);
                     }
                 };
 
                 this.mediaRecorder.onstop = () => {
-                    console.log('Recording stopped, chunks:', this.audioChunks.length);
+                    //console.log('Recording stopped, chunks:', this.audioChunks.length);
                     this.processAudio();
                 };
 
@@ -500,18 +523,18 @@
 
             async processAudio() {
                 if (this.audioChunks.length === 0) {
-                    console.log('No audio chunks to process');
+                    //console.log('No audio chunks to process');
                     this.updateStatus('Call connected - Start speaking!');
                     return;
                 }
 
                 try {
                     const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                    console.log('Audio blob created, size:', audioBlob.size);
+                    //console.log('Audio blob created, size:', audioBlob.size);
                     
                     // Skip very short recordings
                     if (audioBlob.size < 1000) {
-                        console.log('Audio blob too small, skipping');
+                        //console.log('Audio blob too small, skipping');
                         this.updateStatus('Call connected - Start speaking!');
                         return;
                     }
@@ -522,16 +545,16 @@
                     formData.append('callId', this.generateCallId());
 
                     // Log FormData contents for debugging
-                    for (let [key, value] of formData.entries()) {
-                        console.log(`FormData ${key}:`, value);
-                    }
+                    // for (let [key, value] of formData.entries()) {
+                    //     console.log(`FormData ${key}:`, value);
+                    // }
 
                     const response = await this.sendToWebhook(formData);
-                    console.log('Webhook response:', response);
+                    //console.log('Webhook response:', response);
                     await this.handleResponse(response);
 
                 } catch (error) {
-                    console.error('Processing error:', error);
+                    //console.error('Processing error:', error);
                     this.showError(`Processing failed: ${error.message}`);
                     this.updateStatus('Call connected - Start speaking!');
                 }
@@ -552,7 +575,7 @@
                         targetUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
                     }
 
-                    console.log('Sending request to:', targetUrl);
+                    //console.log('Sending request to:', targetUrl);
 
                     const response = await fetch(targetUrl, {
                         method: 'POST',
@@ -593,10 +616,10 @@
             }
 
             async handleResponse(data) {
-                console.log('Handling response:', data);
+                //console.log('Handling response:', data);
                 if (data.transcription) {
                     this.transcript.innerHTML = `
-                        <div style="color: #00d2ff; margin-bottom: 10px;">You: ${data.transcription}</div>
+                        <div style="color: #4a90e2; margin-bottom: 8px;">You: ${data.transcription}</div>
                         ${data.response ? `<div style="color: #2ed573;">AI: ${data.response}</div>` : ''}
                     `;
                 }
@@ -604,12 +627,12 @@
                 if (data.audioUrl) {
                     await this.playAIResponse(data.audioUrl);
                 } else if (data.audioBase64) {
-                    // Handle base64 audio if n8n returns it
-                    const audioBlob = this.base64ToBlob(data.audioBase64, 'audio/webm');
+                    // Handle base64 audio with audio/mpeg MIME type for MP3
+                    const audioBlob = this.base64ToBlob(data.audioBase64, 'audio/mpeg');
                     const audioUrl = URL.createObjectURL(audioBlob);
                     await this.playAIResponse(audioUrl);
                 } else if (data.response) {
-                    // Fallback to text-to-speech if no audio provided
+                    // Fallback to browser text-to-speech
                     await this.speakText(data.response);
                 } else {
                     this.showError('No audio or text response received from webhook');
@@ -623,36 +646,33 @@
                     this.isSpeaking = true;
                     this.updateUI();
                     this.updateStatus('AI is speaking...');
+                    this.speakingIndicator.style.display = 'flex';
 
                     const audio = new Audio(audioUrl);
                     audio.preload = 'auto';
                     
                     await new Promise((resolve, reject) => {
                         audio.oncanplaythrough = () => {
-                            console.log('Playing audio from:', audioUrl);
                             audio.play().then(resolve).catch(reject);
                         };
                         audio.onerror = () => {
-                            console.error('Audio playback error for URL:', audioUrl);
                             reject(new Error('Failed to load audio'));
                         };
                         audio.onended = () => {
-                            console.log('Audio playback ended');
                             resolve();
                         };
                     });
 
-                    // Clean up object URL if it was created for base64 audio
                     if (audioUrl.startsWith('blob:')) {
                         URL.revokeObjectURL(audioUrl);
                     }
 
                 } catch (error) {
-                    console.error('Audio playback error:', error);
                     this.showError(`Audio playback failed: ${error.message}`);
                 } finally {
                     this.isSpeaking = false;
                     this.updateUI();
+                    this.speakingIndicator.style.display = 'none';
                 }
             }
 
@@ -670,6 +690,7 @@
                     return new Promise((resolve) => {
                         this.isSpeaking = true;
                         this.updateUI();
+                        this.speakingIndicator.style.display = 'flex';
                         
                         const utterance = new SpeechSynthesisUtterance(text);
                         utterance.rate = 0.9;
@@ -679,6 +700,7 @@
                         utterance.onend = () => {
                             this.isSpeaking = false;
                             this.updateUI();
+                            this.speakingIndicator.style.display = 'none';
                             resolve();
                         };
                         
@@ -699,7 +721,7 @@
 
                     bars.forEach((bar, index) => {
                         const value = dataArray[index * 4] || 0;
-                        const height = Math.max(5, (value / 255) * 35);
+                        const height = Math.max(4, (value / 255) * 28);
                         bar.style.height = `${height}px`;
                     });
 
@@ -724,8 +746,11 @@
                 this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
                 this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
                 
-                this.muteBtn.className = `call-btn mute-btn ${this.isMuted ? 'muted' : ''}`;
-                this.muteBtn.textContent = this.isMuted ? '🔇' : '🎤';
+                this.muteBtn.className = `call-btn mute-btn${this.isMuted ? ' muted' : ''}`;
+                // Change mic icon color if muted
+                if (this.micIcon) {
+                    this.micIcon.style.opacity = this.isMuted ? '0.5' : '1';
+                }
             }
 
             updateStatus(message) {
