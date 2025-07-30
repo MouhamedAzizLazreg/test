@@ -267,6 +267,15 @@
                 <input type="url" id="webhookUrl" placeholder="https://ai.ev24.support/webhook/your-id">
             </div>
             <div class="setting-group">
+                <label>CORS Proxy (if needed):</label>
+                <select id="corsProxy">
+                    <option value="none">No Proxy (Direct)</option>
+                    <option value="allorigins">AllOrigins Proxy</option>
+                    <option value="corsproxy">CORS Proxy</option>
+                    <option value="custom">Custom Proxy</option>
+                </select>
+            </div>
+            <div class="setting-group">
                 <label>Voice Detection Sensitivity:</label>
                 <select id="sensitivity">
                     <option value="high">High (Responds to whispers)</option>
@@ -341,6 +350,7 @@
                 this.settingsPanel = document.getElementById('settingsPanel');
                 this.webhookUrl = document.getElementById('webhookUrl');
                 this.sensitivity = document.getElementById('sensitivity');
+                this.corsProxy = document.getElementById('corsProxy');
                 this.volumeVisualizer = document.getElementById('volumeVisualizer');
             }
 
@@ -371,7 +381,6 @@
 
             async endCall() {
                 this.isCallActive = false;
-                this.stopListening();
                 this.cleanup();
                 this.updateUI();
                 this.updateStatus('Call ended');
@@ -468,14 +477,16 @@
                 this.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         this.audioChunks.push(event.data);
+                        console.log('Audio chunk received, size:', event.data.size);
                     }
                 };
 
                 this.mediaRecorder.onstop = () => {
+                    console.log('Recording stopped, chunks:', this.audioChunks.length);
                     this.processAudio();
                 };
 
-                this.mediaRecorder.start();
+                this.mediaRecorder.start(100); // Capture data every 100ms for smoother recording
             }
 
             stopRecording() {
@@ -488,13 +499,19 @@
             }
 
             async processAudio() {
-                if (this.audioChunks.length === 0) return;
+                if (this.audioChunks.length === 0) {
+                    console.log('No audio chunks to process');
+                    this.updateStatus('Call connected - Start speaking!');
+                    return;
+                }
 
                 try {
                     const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                    console.log('Audio blob created, size:', audioBlob.size);
                     
                     // Skip very short recordings
                     if (audioBlob.size < 1000) {
+                        console.log('Audio blob too small, skipping');
                         this.updateStatus('Call connected - Start speaking!');
                         return;
                     }
@@ -504,10 +521,17 @@
                     formData.append('timestamp', new Date().toISOString());
                     formData.append('callId', this.generateCallId());
 
+                    // Log FormData contents for debugging
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`FormData ${key}:`, value);
+                    }
+
                     const response = await this.sendToWebhook(formData);
+                    console.log('Webhook response:', response);
                     await this.handleResponse(response);
 
                 } catch (error) {
+                    console.error('Processing error:', error);
                     this.showError(`Processing failed: ${error.message}`);
                     this.updateStatus('Call connected - Start speaking!');
                 }
@@ -515,16 +539,26 @@
 
             async sendToWebhook(formData) {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
 
                 try {
-                    const response = await fetch(this.webhookUrl.value, {
+                    let targetUrl = this.webhookUrl.value.trim();
+                    
+                    // Apply CORS proxy if selected
+                    const proxyType = this.corsProxy.value;
+                    if (proxyType === 'allorigins') {
+                        targetUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                    } else if (proxyType === 'corsproxy') {
+                        targetUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                    }
+
+                    console.log('Sending request to:', targetUrl);
+
+                    const response = await fetch(targetUrl, {
                         method: 'POST',
                         body: formData,
                         signal: controller.signal,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+                        mode: 'cors'
                     });
 
                     clearTimeout(timeoutId);
@@ -533,17 +567,33 @@
                         throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
                     }
 
-                    return await response.json();
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return await response.json();
+                    } else {
+                        // Try to parse as JSON anyway, fallback to text
+                        const text = await response.text();
+                        try {
+                            return JSON.parse(text);
+                        } catch {
+                            throw new Error(`Invalid response format: ${text.substring(0, 100)}`);
+                        }
+                    }
+
                 } catch (error) {
                     clearTimeout(timeoutId);
                     if (error.name === 'AbortError') {
                         throw new Error('Request timed out - check your webhook URL and network connection');
+                    }
+                    if (error.message.includes('CORS') || error.message.includes('blocked')) {
+                        throw new Error('CORS error - Try enabling CORS Proxy in settings above');
                     }
                     throw error;
                 }
             }
 
             async handleResponse(data) {
+                console.log('Handling response:', data);
                 if (data.transcription) {
                     this.transcript.innerHTML = `
                         <div style="color: #00d2ff; margin-bottom: 10px;">You: ${data.transcription}</div>
@@ -553,9 +603,16 @@
 
                 if (data.audioUrl) {
                     await this.playAIResponse(data.audioUrl);
+                } else if (data.audioBase64) {
+                    // Handle base64 audio if n8n returns it
+                    const audioBlob = this.base64ToBlob(data.audioBase64, 'audio/webm');
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    await this.playAIResponse(audioUrl);
                 } else if (data.response) {
-                    // Fallback to text-to-speech if no audio URL
+                    // Fallback to text-to-speech if no audio provided
                     await this.speakText(data.response);
+                } else {
+                    this.showError('No audio or text response received from webhook');
                 }
 
                 this.updateStatus('Call connected - Start speaking!');
@@ -572,19 +629,40 @@
                     
                     await new Promise((resolve, reject) => {
                         audio.oncanplaythrough = () => {
+                            console.log('Playing audio from:', audioUrl);
                             audio.play().then(resolve).catch(reject);
                         };
-                        audio.onerror = () => reject(new Error('Failed to load audio'));
-                        audio.onended = resolve;
+                        audio.onerror = () => {
+                            console.error('Audio playback error for URL:', audioUrl);
+                            reject(new Error('Failed to load audio'));
+                        };
+                        audio.onended = () => {
+                            console.log('Audio playback ended');
+                            resolve();
+                        };
                     });
+
+                    // Clean up object URL if it was created for base64 audio
+                    if (audioUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(audioUrl);
+                    }
 
                 } catch (error) {
                     console.error('Audio playback error:', error);
-                    // Continue the call even if audio fails
+                    this.showError(`Audio playback failed: ${error.message}`);
                 } finally {
                     this.isSpeaking = false;
                     this.updateUI();
                 }
+            }
+
+            base64ToBlob(base64, mimeType) {
+                const binary = atob(base64);
+                const array = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    array[i] = binary.charCodeAt(i);
+                }
+                return new Blob([array], { type: mimeType });
             }
 
             async speakText(text) {
