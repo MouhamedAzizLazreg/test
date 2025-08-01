@@ -246,6 +246,19 @@
             font-size: 0.97rem;
         }
 
+        .debug-info {
+            background: #f0f8ff;
+            color: #2c5aa0;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 12px 0 0 0;
+            border: 1px solid #d0e8ff;
+            font-size: 0.85rem;
+            text-align: left;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -277,12 +290,18 @@
                 <input type="url" id="webhookUrl" placeholder="https://ai.ev24.support/webhook/your-id">
             </div>
             <div class="setting-group">
+                <label>Audio Format:</label>
+                <select id="audioFormat">
+                    <option value="webm">WebM (Default)</option>
+                    <option value="wav">WAV (Better compatibility)</option>
+                </select>
+            </div>
+            <div class="setting-group">
                 <label>CORS Proxy (if needed):</label>
                 <select id="corsProxy">
                     <option value="none">No Proxy (Direct)</option>
                     <option value="allorigins">AllOrigins Proxy</option>
                     <option value="corsproxy">CORS Proxy</option>
-                    <option value="custom">Custom Proxy</option>
                 </select>
             </div>
             <div class="setting-group">
@@ -292,6 +311,11 @@
                     <option value="medium" selected>Medium (Normal conversation)</option>
                     <option value="low">Low (Loud speech only)</option>
                 </select>
+            </div>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="debugMode"> Enable Debug Mode
+                </label>
             </div>
         </div>
 
@@ -336,6 +360,7 @@
         </div>
 
         <div class="error-message hidden" id="errorMessage"></div>
+        <div class="debug-info hidden" id="debugInfo"></div>
     </div>
 
     <script>
@@ -347,10 +372,8 @@
                 this.isSpeaking = false;
                 this.mediaRecorder = null;
                 this.audioStream = null;
-                this.websocket = null;
                 this.audioContext = null;
                 this.analyzer = null;
-                this.silenceTimer = null;
                 this.audioChunks = [];
                 this.lastSpeechTime = 0;
                 
@@ -368,10 +391,13 @@
                 this.aiAvatar = document.getElementById('aiAvatar');
                 this.connectionStatus = document.getElementById('connectionStatus');
                 this.errorMessage = document.getElementById('errorMessage');
+                this.debugInfo = document.getElementById('debugInfo');
                 this.settingsPanel = document.getElementById('settingsPanel');
                 this.webhookUrl = document.getElementById('webhookUrl');
                 this.sensitivity = document.getElementById('sensitivity');
                 this.corsProxy = document.getElementById('corsProxy');
+                this.audioFormat = document.getElementById('audioFormat');
+                this.debugMode = document.getElementById('debugMode');
                 this.volumeVisualizer = document.getElementById('volumeVisualizer');
                 this.speakingIndicator = document.getElementById('speakingIndicator');
                 this.micIcon = document.getElementById('micIcon');
@@ -381,6 +407,24 @@
                 this.startCallBtn.addEventListener('click', () => this.startCall());
                 this.endCallBtn.addEventListener('click', () => this.endCall());
                 this.muteBtn.addEventListener('click', () => this.toggleMute());
+                this.debugMode.addEventListener('change', () => this.toggleDebugMode());
+            }
+
+            toggleDebugMode() {
+                if (this.debugMode.checked) {
+                    this.debugInfo.classList.remove('hidden');
+                } else {
+                    this.debugInfo.classList.add('hidden');
+                }
+            }
+
+            debugLog(message) {
+                if (this.debugMode.checked) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    console.log(`[${timestamp}] ${message}`);
+                    this.debugInfo.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                    this.debugInfo.scrollTop = this.debugInfo.scrollHeight;
+                }
             }
 
             async startCall() {
@@ -397,7 +441,9 @@
                     this.updateStatus('Call connected - Start speaking!');
                     this.connectionStatus.classList.add('connected');
                     this.settingsPanel.classList.add('hidden');
+                    this.debugLog('Call started successfully');
                 } catch (error) {
+                    this.debugLog(`Failed to start call: ${error.message}`);
                     this.showError(`Failed to start call: ${error.message}`);
                 }
             }
@@ -410,6 +456,7 @@
                 this.connectionStatus.classList.remove('connected');
                 this.settingsPanel.classList.remove('hidden');
                 this.transcript.textContent = 'Conversation will appear here...';
+                this.debugLog('Call ended');
             }
 
             toggleMute() {
@@ -421,6 +468,7 @@
                 }
                 this.updateUI();
                 this.updateStatus(this.isMuted ? 'Microphone muted' : 'Microphone active');
+                this.debugLog(`Microphone ${this.isMuted ? 'muted' : 'unmuted'}`);
             }
 
             async initializeAudio() {
@@ -440,6 +488,7 @@
                 
                 this.analyzer.fftSize = 256;
                 this.startVolumeVisualization();
+                this.debugLog('Audio initialized successfully');
             }
 
             setupVoiceDetection() {
@@ -452,7 +501,6 @@
 
             startListening() {
                 if (!this.isCallActive || this.isMuted) return;
-
                 this.detectVoiceActivity();
             }
 
@@ -463,9 +511,8 @@
                 const dataArray = new Uint8Array(bufferLength);
                 this.analyzer.getByteFrequencyData(dataArray);
 
-                // Calculate average volume
                 const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-                const threshold = this.sensitivityLevels[this.sensitivity.value] + 100; // Convert to 0-255 range
+                const threshold = this.sensitivityLevels[this.sensitivity.value] + 100;
 
                 const currentTime = Date.now();
                 
@@ -475,11 +522,9 @@
                     }
                     this.lastSpeechTime = currentTime;
                 } else if (this.isListening && currentTime - this.lastSpeechTime > 1500) {
-                    // Stop recording after 1.5 seconds of silence
                     this.stopRecording();
                 }
 
-                // Continue detection
                 if (this.isCallActive) {
                     setTimeout(() => this.detectVoiceActivity(), 100);
                 }
@@ -493,23 +538,42 @@
                 this.updateUI();
                 this.updateStatus('Listening...');
 
+                // Choose MIME type based on format selection
+                let mimeType;
+                const format = this.audioFormat.value;
+                
+                if (format === 'wav') {
+                    // Try WAV first, fallback to WebM
+                    if (MediaRecorder.isTypeSupported('audio/wav')) {
+                        mimeType = 'audio/wav';
+                    } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
+                        mimeType = 'audio/webm;codecs=pcm';
+                    } else {
+                        mimeType = 'audio/webm;codecs=opus';
+                    }
+                } else {
+                    mimeType = 'audio/webm;codecs=opus';
+                }
+
+                this.debugLog(`Starting recording with MIME type: ${mimeType}`);
+
                 this.mediaRecorder = new MediaRecorder(this.audioStream, {
-                    mimeType: 'audio/webm;codecs=opus'
+                    mimeType: mimeType
                 });
 
                 this.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         this.audioChunks.push(event.data);
-                        //console.log('Audio chunk received, size:', event.data.size);
+                        this.debugLog(`Audio chunk received, size: ${event.data.size}`);
                     }
                 };
 
                 this.mediaRecorder.onstop = () => {
-                    //console.log('Recording stopped, chunks:', this.audioChunks.length);
+                    this.debugLog(`Recording stopped, chunks: ${this.audioChunks.length}`);
                     this.processAudio();
                 };
 
-                this.mediaRecorder.start(100); // Capture data every 100ms for smoother recording
+                this.mediaRecorder.start(100);
             }
 
             stopRecording() {
@@ -519,45 +583,103 @@
                 this.mediaRecorder.stop();
                 this.updateUI();
                 this.updateStatus('Processing...');
+                this.debugLog('Recording stopped');
             }
 
             async processAudio() {
                 if (this.audioChunks.length === 0) {
-                    //console.log('No audio chunks to process');
+                    this.debugLog('No audio chunks to process');
                     this.updateStatus('Call connected - Start speaking!');
                     return;
                 }
 
                 try {
-                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                    //console.log('Audio blob created, size:', audioBlob.size);
+                    const mimeType = this.mediaRecorder.mimeType;
+                    const audioBlob = new Blob(this.audioChunks, { type: mimeType });
                     
-                    // Skip very short recordings
+                    this.debugLog(`Audio blob created - Size: ${audioBlob.size}, Type: ${audioBlob.type}`);
+                    
                     if (audioBlob.size < 1000) {
-                        //console.log('Audio blob too small, skipping');
+                        this.debugLog('Audio blob too small, skipping');
                         this.updateStatus('Call connected - Start speaking!');
                         return;
                     }
 
+                    // Convert to WAV if needed and if format is set to WAV
+                    let finalBlob = audioBlob;
+                    let filename = 'voice.webm';
+                    
+                    if (this.audioFormat.value === 'wav' && !mimeType.includes('wav')) {
+                        this.debugLog('Converting audio to WAV format');
+                        finalBlob = await this.convertToWav(audioBlob);
+                        filename = 'voice.wav';
+                    }
+
                     const formData = new FormData();
-                    formData.append('audio', audioBlob, 'voice.webm');
+                    formData.append('audio', finalBlob, filename);
                     formData.append('timestamp', new Date().toISOString());
                     formData.append('callId', this.generateCallId());
+                    formData.append('mimeType', finalBlob.type);
+                    formData.append('size', finalBlob.size.toString());
 
-                    // Log FormData contents for debugging
-                    // for (let [key, value] of formData.entries()) {
-                    //     console.log(`FormData ${key}:`, value);
-                    // }
+                    this.debugLog(`Sending FormData - File: ${filename}, Size: ${finalBlob.size}, Type: ${finalBlob.type}`);
 
                     const response = await this.sendToWebhook(formData);
-                    //console.log('Webhook response:', response);
                     await this.handleResponse(response);
 
                 } catch (error) {
-                    //console.error('Processing error:', error);
+                    this.debugLog(`Processing error: ${error.message}`);
                     this.showError(`Processing failed: ${error.message}`);
                     this.updateStatus('Call connected - Start speaking!');
                 }
+            }
+
+            async convertToWav(audioBlob) {
+                // Simple WAV conversion using Web Audio API
+                const arrayBuffer = await audioBlob.arrayBuffer();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                const length = audioBuffer.length;
+                const numberOfChannels = audioBuffer.numberOfChannels;
+                const sampleRate = audioBuffer.sampleRate;
+                
+                // Create WAV header
+                const arrayBuffer2 = new ArrayBuffer(44 + length * numberOfChannels * 2);
+                const view = new DataView(arrayBuffer2);
+                
+                // WAV header
+                const writeString = (offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+                
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, numberOfChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+                view.setUint16(32, numberOfChannels * 2, true);
+                view.setUint16(34, 16, true);
+                writeString(36, 'data');
+                view.setUint32(40, length * numberOfChannels * 2, true);
+                
+                // Convert audio data
+                let offset = 44;
+                for (let i = 0; i < length; i++) {
+                    for (let channel = 0; channel < numberOfChannels; channel++) {
+                        const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[i]));
+                        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                        offset += 2;
+                    }
+                }
+                
+                return new Blob([arrayBuffer2], { type: 'audio/wav' });
             }
 
             async sendToWebhook(formData) {
@@ -567,7 +689,6 @@
                 try {
                     let targetUrl = this.webhookUrl.value.trim();
                     
-                    // Apply CORS proxy if selected
                     const proxyType = this.corsProxy.value;
                     if (proxyType === 'allorigins') {
                         targetUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
@@ -575,7 +696,7 @@
                         targetUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
                     }
 
-                    //console.log('Sending request to:', targetUrl);
+                    this.debugLog(`Sending request to: ${targetUrl}`);
 
                     const response = await fetch(targetUrl, {
                         method: 'POST',
@@ -586,22 +707,29 @@
 
                     clearTimeout(timeoutId);
 
+                    this.debugLog(`Response status: ${response.status} ${response.statusText}`);
+                    this.debugLog(`Response headers: ${JSON.stringify([...response.headers.entries()])}`);
+
                     if (!response.ok) {
                         throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
                     }
 
                     const contentType = response.headers.get('content-type');
+                    let responseData;
+                    
                     if (contentType && contentType.includes('application/json')) {
-                        return await response.json();
+                        responseData = await response.json();
                     } else {
-                        // Try to parse as JSON anyway, fallback to text
                         const text = await response.text();
                         try {
-                            return JSON.parse(text);
+                            responseData = JSON.parse(text);
                         } catch {
                             throw new Error(`Invalid response format: ${text.substring(0, 100)}`);
                         }
                     }
+
+                    this.debugLog(`Response data: ${JSON.stringify(responseData)}`);
+                    return responseData;
 
                 } catch (error) {
                     clearTimeout(timeoutId);
@@ -616,7 +744,8 @@
             }
 
             async handleResponse(data) {
-                //console.log('Handling response:', data);
+                this.debugLog(`Handling response: ${JSON.stringify(data)}`);
+                
                 if (data.transcription) {
                     this.transcript.innerHTML = `
                         <div style="color: #4a90e2; margin-bottom: 8px;">You: ${data.transcription}</div>
@@ -627,12 +756,10 @@
                 if (data.audioUrl) {
                     await this.playAIResponse(data.audioUrl);
                 } else if (data.audioBase64) {
-                    // Handle base64 audio with audio/mpeg MIME type for MP3
                     const audioBlob = this.base64ToBlob(data.audioBase64, 'audio/mpeg');
                     const audioUrl = URL.createObjectURL(audioBlob);
                     await this.playAIResponse(audioUrl);
                 } else if (data.response) {
-                    // Fallback to browser text-to-speech
                     await this.speakText(data.response);
                 } else {
                     this.showError('No audio or text response received from webhook');
@@ -668,6 +795,7 @@
                     }
 
                 } catch (error) {
+                    this.debugLog(`Audio playback failed: ${error.message}`);
                     this.showError(`Audio playback failed: ${error.message}`);
                 } finally {
                     this.isSpeaking = false;
@@ -734,7 +862,6 @@
             }
 
             updateUI() {
-                // Avatar states
                 this.aiAvatar.className = 'ai-avatar';
                 if (this.isSpeaking) {
                     this.aiAvatar.classList.add('speaking');
@@ -742,12 +869,10 @@
                     this.aiAvatar.classList.add('listening');
                 }
 
-                // Button states
                 this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
                 this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
                 
                 this.muteBtn.className = `call-btn mute-btn${this.isMuted ? ' muted' : ''}`;
-                // Change mic icon color if muted
                 if (this.micIcon) {
                     this.micIcon.style.opacity = this.isMuted ? '0.5' : '1';
                 }
