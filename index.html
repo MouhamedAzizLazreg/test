@@ -1,150 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Chat with Ask Innovation</title>
-</head>
-<body>
-
 <script>
-  window.chatwootSettings = {
+  window. chatwootSettings = {
     "position": "right",
     "type": "expanded_bubble",
-    "launcherTitle": "Chat with us",
-    "showPopoutButton": false
+    "launcherTitle": "Ask Me Anything"
   };
   
   (function(d,t) {
     var BASE_URL="https://app.ask-innovation.com";
     var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
     g.src=BASE_URL+"/packs/js/sdk.js";
-    g.defer = true;
+    g.async = true;
     s.parentNode.insertBefore(g,s);
     g.onload=function(){
       window.chatwootSDK.run({
         websiteToken: 'mU6WbuBjTPvyeZjG8T86Xh87',
         baseUrl: BASE_URL
       });
+      window.addEventListener('chatwoot:ready', function() {
+        window.$chatwoot.toggle('open');
+      });
     };
-  })(document,"script");
-  
-  // Wait for both DOM and Chatwoot to be ready
-  function initChatwoot() {
-    if (window.$chatwoot) {
+    
+    window. addEventListener('chatwoot:ready', function() {
       window.$chatwoot.setCustomAttributes({
         source_site: window.location.hostname
       });
-      
-      // Auto-open the widget
-      setTimeout(function() {
-        window.$chatwoot.toggle('open');
-        
-        // Prevent closing by overriding the toggle function
-        var originalToggle = window.$chatwoot.toggle;
-        window.$chatwoot.toggle = function(state) {
-          // Only allow 'open', ignore 'close'
-          if (state === 'open' || state === undefined) {
-            originalToggle.call(this, 'open');
-          }
-        };
-        
-        // Disable close button clicks
-        setTimeout(function() {
-          var iframe = document.querySelector('#chatwoot_live_chat_widget');
-          if (iframe) {
-            try {
-              var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-              var style = iframeDoc.createElement('style');
-              style.textContent = '.close-button, [data-testid="close-button"], button[aria-label*="close"], button[aria-label*="Close"] { display: none !important; pointer-events: none !important; }';
-              iframeDoc.head.appendChild(style);
-            } catch(e) {
-              console.log('Cross-origin iframe access restricted');
-            }
-          }
-        }, 1500);
-      }, 500);
-    } else {
-      setTimeout(initChatwoot, 100);
-    }
-  }
-  
-  window.addEventListener('chatwoot:ready', initChatwoot);
-  
-  // Fallback for browsers that don't fire the event
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(initChatwoot, 1000);
     });
-  } else {
-    setTimeout(initChatwoot, 1000);
-  }
+  })(document,"script");
 </script>
-
-<style>
-  /* Hide the close button and prevent widget from closing */
-  #chatwoot_live_chat_widget {
-    pointer-events: auto !important;
-  }
-  
-  /* Hide all possible close buttons */
-  .woot-widget-holder .woot-widget-bubble__close,
-  .woot-widget-bubble.woot-elements--right .woot-widget-bubble__close,
-  [class*="close-button"],
-  button[aria-label*="close"],
-  button[aria-label*="Close"] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-  
-  /* Ensure widget stays visible */
-  .woot-widget-holder {
-    pointer-events: auto !important;
-  }
-  
-  /* Remove minimize functionality */
-  .woot--close {
-    display: none !important;
-  }
-  
-  /* Mobile-specific styles */
-  @media only screen and (max-width: 768px) {
-    #chatwoot_live_chat_widget {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      max-width: 100% !important;
-      max-height: 100% !important;
-    }
-    
-    .woot-widget-holder {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    .woot-widget-bubble {
-      width: 100% !important;
-      height: 100% !important;
-      max-width: 100% !important;
-      max-height: 100% !important;
-      border-radius: 0 !important;
-    }
-  }
-</style>
-
-</body>
-</html>
