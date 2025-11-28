@@ -1,9 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Chat with Ask Innovation</title>
+</head>
+<body>
+
 <script>
-  window. chatwootSettings = {
+  window.chatwootSettings = {
     "position": "right",
     "type": "expanded_bubble",
     "launcherTitle": "Chat with us",
-    "showPopoutButton": false  // Optional: hides the popout button
+    "showPopoutButton": false
   };
   
   (function(d,t) {
@@ -22,15 +34,109 @@
       window.addEventListener('chatwoot:ready', function() {
         window.$chatwoot.toggle('open');
         
-        // Optional: Prevent closing (removes close button functionality)
-        // This requires custom CSS to hide the close button
+        // Prevent closing by overriding the toggle function
+        const originalToggle = window.$chatwoot.toggle;
+        window.$chatwoot.toggle = function(state) {
+          // Only allow 'open', ignore 'close'
+          if (state === 'open' || state === undefined) {
+            originalToggle.call(this, 'open');
+          }
+        };
+        
+        // Disable close button clicks
+        setTimeout(() => {
+          const iframe = document.querySelector('#chatwoot_live_chat_widget');
+          if (iframe) {
+            try {
+              const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+              const style = iframeDoc.createElement('style');
+              style.textContent = `
+                .close-button, 
+                [data-testid="close-button"],
+                button[aria-label*="close"],
+                button[aria-label*="Close"] {
+                  display: none !important;
+                  pointer-events: none !important;
+                }
+              `;
+              iframeDoc.head.appendChild(style);
+            } catch(e) {
+              console.log('Cross-origin iframe access restricted');
+            }
+          }
+        }, 1000);
       });
     };
     
-    window. addEventListener('chatwoot:ready', function() {
+    window.addEventListener('chatwoot:ready', function() {
       window.$chatwoot.setCustomAttributes({
         source_site: window.location.hostname
       });
     });
   })(document,"script");
 </script>
+
+<style>
+  /* Hide the close button and prevent widget from closing */
+  #chatwoot_live_chat_widget {
+    pointer-events: auto !important;
+  }
+  
+  /* Hide all possible close buttons */
+  .woot-widget-holder .woot-widget-bubble__close,
+  .woot-widget-bubble.woot-elements--right .woot-widget-bubble__close,
+  [class*="close-button"],
+  button[aria-label*="close"],
+  button[aria-label*="Close"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Ensure widget stays visible */
+  .woot-widget-holder {
+    pointer-events: auto !important;
+  }
+  
+  /* Remove minimize functionality */
+  .woot--close {
+    display: none !important;
+  }
+  
+  /* Mobile-specific styles */
+  @media only screen and (max-width: 768px) {
+    #chatwoot_live_chat_widget {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+    }
+    
+    .woot-widget-holder {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    .woot-widget-bubble {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      border-radius: 0 !important;
+    }
+  }
+</style>
+
+</body>
+</html>
