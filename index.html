@@ -12,6 +12,9 @@
         baseUrl: BASE_URL
       })
     };
+    window.addEventListener('chatwoot:ready', function() {
+        window.$chatwoot.toggle('open');
+      });
    window.$chatwoot.setCustomAttributes({
       source_site: window.location.hostname
     });
