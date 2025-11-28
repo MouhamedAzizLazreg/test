@@ -1,42 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chatwoot Test</title>
-</head>
-<body>
-  <h1>Chatwoot Chat Widget</h1>
-  
-  <script>
-    window.chatwootSettings = {
-      "position": "right",
-      "type": "expanded_bubble",
-      "launcherTitle": "Ask Me Anything"
+<script>
+  window.chatwootSettings = {"position":"right","type":"expanded_bubble","launcherTitle":"Chat with us"};
+  (function(d,t) {
+    var BASE_URL="https://app.ask-innovation.com";
+    var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=BASE_URL+"/packs/js/sdk.js";
+    g.async = true;
+    s.parentNode.insertBefore(g,s);
+    g.onload=function(){
+      window.chatwootSDK.run({
+        websiteToken: 'mU6WbuBjTPvyeZjG8T86Xh87',
+        baseUrl: BASE_URL
+      })
     };
-    
-    (function(d,t) {
-      var BASE_URL="https://app.ask-innovation.com";
-      var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-      g.src=BASE_URL+"/packs/js/sdk.js";
-      g.async = true;
-      s.parentNode.insertBefore(g,s);
-      g.onload=function(){
-        window.chatwootSDK.run({
-          websiteToken: 'mU6WbuBjTPvyeZjG8T86Xh87',
-          baseUrl: BASE_URL
-        });
-        window.addEventListener('chatwoot:ready', function() {
-          window.$chatwoot.toggle('open');
-        });
-      };
-      
-      window.addEventListener('chatwoot:ready', function() {
-        window.$chatwoot.setCustomAttributes({
-          source_site: window.location.hostname
-        });
-      });
-    })(document,"script");
-  </script>
-</body>
-</html>
+   window.$chatwoot.setCustomAttributes({
+      source_site: window.location.hostname
+    });
+  })(document,"script");
+</script>
