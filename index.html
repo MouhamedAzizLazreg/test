@@ -22,20 +22,29 @@
     var BASE_URL="https://app.ask-innovation.com";
     var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
     g.src=BASE_URL+"/packs/js/sdk.js";
-    g.async = true;
+    g.defer = true;
     s.parentNode.insertBefore(g,s);
     g.onload=function(){
       window.chatwootSDK.run({
         websiteToken: 'mU6WbuBjTPvyeZjG8T86Xh87',
         baseUrl: BASE_URL
       });
+    };
+  })(document,"script");
+  
+  // Wait for both DOM and Chatwoot to be ready
+  function initChatwoot() {
+    if (window.$chatwoot) {
+      window.$chatwoot.setCustomAttributes({
+        source_site: window.location.hostname
+      });
       
-      // Auto-open the widget after SDK loads
-      window.addEventListener('chatwoot:ready', function() {
+      // Auto-open the widget
+      setTimeout(function() {
         window.$chatwoot.toggle('open');
         
         // Prevent closing by overriding the toggle function
-        const originalToggle = window.$chatwoot.toggle;
+        var originalToggle = window.$chatwoot.toggle;
         window.$chatwoot.toggle = function(state) {
           // Only allow 'open', ignore 'close'
           if (state === 'open' || state === undefined) {
@@ -44,36 +53,35 @@
         };
         
         // Disable close button clicks
-        setTimeout(() => {
-          const iframe = document.querySelector('#chatwoot_live_chat_widget');
+        setTimeout(function() {
+          var iframe = document.querySelector('#chatwoot_live_chat_widget');
           if (iframe) {
             try {
-              const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-              const style = iframeDoc.createElement('style');
-              style.textContent = `
-                .close-button, 
-                [data-testid="close-button"],
-                button[aria-label*="close"],
-                button[aria-label*="Close"] {
-                  display: none !important;
-                  pointer-events: none !important;
-                }
-              `;
+              var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+              var style = iframeDoc.createElement('style');
+              style.textContent = '.close-button, [data-testid="close-button"], button[aria-label*="close"], button[aria-label*="Close"] { display: none !important; pointer-events: none !important; }';
               iframeDoc.head.appendChild(style);
             } catch(e) {
               console.log('Cross-origin iframe access restricted');
             }
           }
-        }, 1000);
-      });
-    };
-    
-    window.addEventListener('chatwoot:ready', function() {
-      window.$chatwoot.setCustomAttributes({
-        source_site: window.location.hostname
-      });
+        }, 1500);
+      }, 500);
+    } else {
+      setTimeout(initChatwoot, 100);
+    }
+  }
+  
+  window.addEventListener('chatwoot:ready', initChatwoot);
+  
+  // Fallback for browsers that don't fire the event
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(initChatwoot, 1000);
     });
-  })(document,"script");
+  } else {
+    setTimeout(initChatwoot, 1000);
+  }
 </script>
 
 <style>
